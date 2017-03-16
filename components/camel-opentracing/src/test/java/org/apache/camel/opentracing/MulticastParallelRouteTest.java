@@ -24,13 +24,13 @@ import org.junit.Test;
 public class MulticastParallelRouteTest extends CamelOpenTracingTestSupport {
 
     private static SpanTestData[] testdata = {
-        new SpanTestData().setLabel("seda:b server").setUri("seda://c").setOperation("c")
+        new SpanTestData().setLabel("seda:b server").setUri("seda://b").setOperation("b")
             .setKind(Tags.SPAN_KIND_SERVER).setParentId(1),
-        new SpanTestData().setLabel("seda:b client").setUri("seda://c").setOperation("c")
+        new SpanTestData().setLabel("seda:b client").setUri("seda://b").setOperation("b")
             .setKind(Tags.SPAN_KIND_CLIENT).setParentId(4),
-        new SpanTestData().setLabel("seda:c server").setUri("seda://b").setOperation("b")
+        new SpanTestData().setLabel("seda:c server").setUri("seda://c").setOperation("c")
             .setKind(Tags.SPAN_KIND_SERVER).setParentId(3),
-        new SpanTestData().setLabel("seda:c client").setUri("seda://b").setOperation("b")
+        new SpanTestData().setLabel("seda:c client").setUri("seda://c").setOperation("c")
             .setKind(Tags.SPAN_KIND_CLIENT).setParentId(4),
         new SpanTestData().setLabel("seda:a server").setUri("seda://a").setOperation("a")
             .setKind(Tags.SPAN_KIND_SERVER).setParentId(5),
@@ -50,12 +50,7 @@ public class MulticastParallelRouteTest extends CamelOpenTracingTestSupport {
     public void testRoute() throws Exception {
         template.requestBody("direct:start", "Hello");
 
-        verify();
-
-        getTracer().finishedSpans().forEach(s -> {
-            System.out.println("MockSpan: traceId="+s.context().traceId()
-                +" spanId="+s.context().spanId()+" parentId="+s.parentId()+" opName="+s.operationName());
-        });
+        verify(true);
     }
 
     @Override

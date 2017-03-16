@@ -18,11 +18,15 @@ package org.apache.camel.opentracing;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import io.opentracing.Span;
+import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
 import io.opentracing.mock.MockTracer.Propagator;
 import io.opentracing.tag.Tags;
@@ -63,36 +67,56 @@ public class CamelOpenTracingTestSupport extends CamelTestSupport {
     }
 
     protected void verify() {
+        verify(false);
+    }
+
+    protected void verify(boolean async) {
         assertEquals("Incorrect number of spans", testdata.length, tracer.finishedSpans().size());
 
         verifySameTrace();
 
+        List<MockSpan> spans = tracer.finishedSpans();
+        if (async) {
+            final List<MockSpan> unsortedSpans = spans;
+            spans = Arrays.asList(testdata).stream()
+                    .map(td -> findSpan(td, unsortedSpans)).distinct().collect(Collectors.toList());
+            assertEquals("Incorrect number of spans after sorting", testdata.length, tracer.finishedSpans().size());
+        }
+
         for (int i = 0; i < testdata.length; i++) {
-            String component = (String) tracer.finishedSpans().get(i).tags().get(Tags.COMPONENT.getKey());
-            assertNotNull(component);
-            assertEquals(testdata[i].getLabel(),
-                SpanDecorator.CAMEL_COMPONENT + URI.create((String) testdata[i].getUri()).getScheme(),
-                component);
-            assertEquals(testdata[i].getLabel(), testdata[i].getUri(),
-                tracer.finishedSpans().get(i).tags().get("camel.uri"));
+            verifySpan(i, testdata, spans);
+        }
+    }
 
-            // If span associated with TestSEDASpanDecorator, check that pre/post tags have been defined
-            if ("camel-seda".equals(component)) {
-                assertTrue(tracer.finishedSpans().get(i).tags().containsKey("pre"));
-                assertTrue(tracer.finishedSpans().get(i).tags().containsKey("post"));
-            }
+    protected MockSpan findSpan(SpanTestData testdata, List<MockSpan> spans) {
+        return spans.stream().filter(s -> s.operationName().equals(testdata.getOperation())
+                && s.tags().get("camel.uri").equals(testdata.getUri())
+                && s.tags().get(Tags.SPAN_KIND.getKey()).equals(testdata.getKind())).findFirst().orElse(null);
+    }
 
-            assertEquals(testdata[i].getLabel(), testdata[i].getOperation(), tracer.finishedSpans().get(i).operationName());
+    protected void verifySpan(int index, SpanTestData[] testdata, List<MockSpan> spans) {
+        String component = (String) spans.get(index).tags().get(Tags.COMPONENT.getKey());
+        assertNotNull(component);
+        assertEquals(testdata[index].getLabel(),
+            SpanDecorator.CAMEL_COMPONENT + URI.create((String) testdata[index].getUri()).getScheme(),
+            component);
+        assertEquals(testdata[index].getLabel(), testdata[index].getUri(), spans.get(index).tags().get("camel.uri"));
 
-            assertEquals(testdata[i].getLabel(), testdata[i].getKind(),
-                tracer.finishedSpans().get(i).tags().get(Tags.SPAN_KIND.getKey()));
+        // If span associated with TestSEDASpanDecorator, check that pre/post tags have been defined
+        if ("camel-seda".equals(component)) {
+            assertTrue(spans.get(index).tags().containsKey("pre"));
+            assertTrue(spans.get(index).tags().containsKey("post"));
+        }
 
-            if (testdata[i].getParentId() != -1) {
-                assertEquals(testdata[i].getLabel(),
-                    tracer.finishedSpans().get(testdata[i].getParentId()).context().spanId(),
-                    tracer.finishedSpans().get(i).parentId());
-            }
+        assertEquals(testdata[index].getLabel(), testdata[index].getOperation(), spans.get(index).operationName());
 
+        assertEquals(testdata[index].getLabel(), testdata[index].getKind(),
+                spans.get(index).tags().get(Tags.SPAN_KIND.getKey()));
+
+        if (testdata[index].getParentId() != -1) {
+            assertEquals(testdata[index].getLabel(),
+                spans.get(testdata[index].getParentId()).context().spanId(),
+                spans.get(index).parentId());
         }
     }
 
