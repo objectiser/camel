@@ -160,6 +160,8 @@ public class OpenTracingTracer extends ServiceSupport implements RoutePolicyFact
 
     private final class OpenTracingEventNotifier extends EventNotifierSupport {
 
+        private static final String MANAGED_SPAN_PROPERTY = "ManagedSpan";
+
         @Override
         public void notify(EventObject event) throws Exception {
             if (event instanceof ExchangeSendingEvent) {
@@ -176,20 +178,29 @@ public class OpenTracingTracer extends ServiceSupport implements RoutePolicyFact
                 sd.pre(span, ese.getExchange(), ese.getEndpoint());
                 tracer.inject(span.context(), Format.Builtin.TEXT_MAP,
                     new CamelHeadersInjectAdapter(ese.getExchange().getIn().getHeaders()));
-                spanManager.activate(span);
+                ese.getExchange().setProperty(MANAGED_SPAN_PROPERTY, spanManager.activate(span));
                 if (LOG.isTraceEnabled()) {
                     LOG.trace("OpenTracing: start client span=" + span);
                 }
             } else if (event instanceof ExchangeSentEvent) {
-                SpanManager.ManagedSpan managedSpan = spanManager.current();
+                ExchangeSentEvent ese = (ExchangeSentEvent) event;
+                // If managed span associated with exchange, then was final outbound component in the chain
+                // so should use that managed span. Otherwise check span manager for current managed span.
+                // This was required for situations (e.g. JMS component) where response was handled in
+                // a separate thread.
+                SpanManager.ManagedSpan managedSpan = (SpanManager.ManagedSpan)
+                        ese.getExchange().getProperty(MANAGED_SPAN_PROPERTY);
+                if (managedSpan == null) {
+                    managedSpan = spanManager.current();
+                }
                 if (LOG.isTraceEnabled()) {
                     LOG.trace("OpenTracing: start client span=" + managedSpan.getSpan());
                 }
-                SpanDecorator sd = getSpanDecorator(((ExchangeSentEvent) event).getEndpoint());
-                sd.post(managedSpan.getSpan(), ((ExchangeSentEvent) event).getExchange(),
-                    ((ExchangeSentEvent) event).getEndpoint());
+                SpanDecorator sd = getSpanDecorator(ese.getEndpoint());
+                sd.post(managedSpan.getSpan(), ese.getExchange(), ese.getEndpoint());
                 managedSpan.getSpan().finish();
                 managedSpan.deactivate();
+                ese.getExchange().setProperty(MANAGED_SPAN_PROPERTY, null);
             }
         }
 

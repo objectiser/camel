@@ -65,12 +65,9 @@ public class CamelOpenTracingTestSupport extends CamelTestSupport {
     protected void verify() {
         assertEquals("Incorrect number of spans", testdata.length, tracer.finishedSpans().size());
 
-        for (int i = 0; i < testdata.length; i++) {
-            if (i > 0) {
-                assertEquals(testdata[i].getLabel(), tracer.finishedSpans().get(0).context().traceId(),
-                    tracer.finishedSpans().get(i).context().traceId());
-            }
+        verifySameTrace();
 
+        for (int i = 0; i < testdata.length; i++) {
             String component = (String) tracer.finishedSpans().get(i).tags().get(Tags.COMPONENT.getKey());
             assertNotNull(component);
             assertEquals(testdata[i].getLabel(),
@@ -97,6 +94,10 @@ public class CamelOpenTracingTestSupport extends CamelTestSupport {
             }
 
         }
+    }
+
+    protected void verifySameTrace() {
+        assertEquals(1, tracer.finishedSpans().stream().map(s -> s.context().traceId()).distinct().count());
     }
 
     protected void verifyTraceSpanNumbers(int numOfTraces, int numSpansPerTrace) {
