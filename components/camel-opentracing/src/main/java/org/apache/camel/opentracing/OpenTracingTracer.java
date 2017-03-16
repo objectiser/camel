@@ -100,6 +100,10 @@ public class OpenTracingTracer extends ServiceSupport implements RoutePolicyFact
             try {
                 // start this service eager so we init before Camel is starting up
                 camelContext.addService(this, true, true);
+
+                // Wrap the ExecutorServiceManager with a SpanManager aware version
+                camelContext.setExecutorServiceManager(
+                        new OpenTracingExecutorServiceManager(camelContext.getExecutorServiceManager(), spanManager));
             } catch (Exception e) {
                 throw ObjectHelper.wrapRuntimeCamelException(e);
             }
