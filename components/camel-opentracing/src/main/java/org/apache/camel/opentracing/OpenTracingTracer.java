@@ -69,6 +69,8 @@ public class OpenTracingTracer extends ServiceSupport implements RoutePolicyFact
     private Tracer tracer = GlobalTracer.get();
     private CamelContext camelContext;
 
+    private static final String MANAGED_SPAN_PROPERTY = "ManagedSpan";
+
     static {
         ServiceLoader.load(SpanDecorator.class).forEach(d -> {
             SpanDecorator existing = decorators.get(d.getComponent());
@@ -164,8 +166,6 @@ public class OpenTracingTracer extends ServiceSupport implements RoutePolicyFact
 
     private final class OpenTracingEventNotifier extends EventNotifierSupport {
 
-        private static final String MANAGED_SPAN_PROPERTY = "ManagedSpan";
-
         @Override
         public void notify(EventObject event) throws Exception {
             if (event instanceof ExchangeSendingEvent) {
@@ -183,6 +183,7 @@ public class OpenTracingTracer extends ServiceSupport implements RoutePolicyFact
                 tracer.inject(span.context(), Format.Builtin.TEXT_MAP,
                     new CamelHeadersInjectAdapter(ese.getExchange().getIn().getHeaders()));
                 ese.getExchange().setProperty(MANAGED_SPAN_PROPERTY, spanManager.activate(span));
+                spanManager.clear();
                 if (LOG.isTraceEnabled()) {
                     LOG.trace("OpenTracing: start client span=" + span);
                 }
@@ -196,6 +197,8 @@ public class OpenTracingTracer extends ServiceSupport implements RoutePolicyFact
                         ese.getExchange().getProperty(MANAGED_SPAN_PROPERTY);
                 if (managedSpan == null) {
                     managedSpan = spanManager.current();
+                } else {
+                    spanManager.activate(managedSpan);
                 }
                 if (LOG.isTraceEnabled()) {
                     LOG.trace("OpenTracing: start client span=" + managedSpan.getSpan());
@@ -227,6 +230,10 @@ public class OpenTracingTracer extends ServiceSupport implements RoutePolicyFact
 
         @Override
         public void onExchangeBegin(Route route, Exchange exchange) {
+            // Check if continuing exchange on same thread
+            if (exchange.getProperties().containsKey(MANAGED_SPAN_PROPERTY)) {
+                spanManager.activate((SpanManager.ManagedSpan)exchange.getProperty(MANAGED_SPAN_PROPERTY));
+            }
             SpanDecorator sd = getSpanDecorator(route.getEndpoint());
             Span span = tracer.buildSpan(sd.getOperationName(exchange, route.getEndpoint()))
                 .asChildOf(tracer.extract(Format.Builtin.TEXT_MAP,
