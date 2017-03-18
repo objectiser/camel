@@ -80,11 +80,18 @@
       <artifactId>camel-http-starter</artifactId>
     </dependency>
 
+    <!-- OpenTracing compliant Tracer dependencies -->
     <dependency>
-      <groupId>org.apache.camel</groupId>
-      <artifactId>camel-example-opentracing-loggingtracer</artifactId>
-      <version>${project.version}</version>
+      <groupId>org.hawkular.apm</groupId>
+      <artifactId>hawkular-apm-client-opentracing</artifactId>
+      <version>0.14.4.Final-SNAPSHOT</version>
     </dependency>
+    <dependency>
+      <groupId>org.hawkular.apm</groupId>
+      <artifactId>hawkular-apm-trace-publisher-rest-client</artifactId>
+      <version>0.14.4.Final-SNAPSHOT</version>
+    </dependency>
+
 
   </dependencies>
 
