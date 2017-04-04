@@ -32,6 +32,8 @@
 
   <properties>
     <opentracing-agent.lib>${project.build.directory}/lib</opentracing-agent.lib>
+    <version.brave.opentracing>0.19.0</version.brave.opentracing>
+    <version.zipkin.reporter>0.6.13</version.zipkin.reporter>
   </properties>
 
   <!-- import Camel BOM -->
@@ -87,12 +89,16 @@
       <groupId>org.apache.camel</groupId>
       <artifactId>camel-opentracing</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.apache.camel</groupId>
-      <artifactId>camel-example-opentracing-loggingtracer</artifactId>
-      <version>${project.version}</version>
+   <dependency>
+      <groupId>io.opentracing.brave</groupId>
+      <artifactId>brave-opentracing</artifactId>
+      <version>${version.brave.opentracing}</version>
     </dependency>
     <dependency>
+      <groupId>io.zipkin.reporter</groupId>
+      <artifactId>zipkin-sender-urlconnection</artifactId>
+      <version>${version.zipkin.reporter}</version>
+    </dependency>    <dependency>
       <groupId>io.opentracing.contrib</groupId>
       <artifactId>opentracing-agent</artifactId>
       <version>${opentracing-java-agent-version}</version>

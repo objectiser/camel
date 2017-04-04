@@ -17,6 +17,12 @@
 package sample.camel;
 
 import org.apache.camel.main.Main;
+import brave.opentracing.BraveTracer;
+import io.opentracing.Tracer;
+import zipkin.Span;
+import zipkin.reporter.AsyncReporter;
+import zipkin.reporter.Reporter;
+import zipkin.reporter.urlconnection.URLConnectionSender;
 
 public final class Service2Application {
 
@@ -26,8 +32,16 @@ public final class Service2Application {
 
     public static void main(String[] args) throws Exception {
         Main main = new Main();
+        main.bind("tracer", initTracer());
         main.addRouteBuilder(new Service2Route());
         main.run();
     }
 
+    public static Tracer initTracer() {
+        System.out.println("Using Zipkin Tracer");
+        String zipkinServerUrl = String.format("%s/api/v1/spans", System.getenv("ZIPKIN_SERVER_URL"));
+        Reporter<Span> reporter = AsyncReporter.builder(URLConnectionSender.create(zipkinServerUrl)).build();
+        brave.Tracer tracer = brave.Tracer.newBuilder().localServiceName("service2").reporter(reporter).build();
+        return BraveTracer.wrap(tracer);
+    }
 }

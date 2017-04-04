@@ -32,6 +32,8 @@
 
   <properties>
     <spring.boot-version>${spring-boot-version}</spring.boot-version>
+    <version.brave.opentracing>0.19.0</version.brave.opentracing>
+    <version.zipkin.reporter>0.6.13</version.zipkin.reporter>
   </properties>
 
   <!-- import Spring-Boot and Camel BOM -->
@@ -80,12 +82,16 @@
       <artifactId>camel-http-starter</artifactId>
     </dependency>
 
-    <dependency>
-      <groupId>org.apache.camel</groupId>
-      <artifactId>camel-example-opentracing-loggingtracer</artifactId>
-      <version>${project.version}</version>
+   <dependency>
+      <groupId>io.opentracing.brave</groupId>
+      <artifactId>brave-opentracing</artifactId>
+      <version>${version.brave.opentracing}</version>
     </dependency>
-
+    <dependency>
+      <groupId>io.zipkin.reporter</groupId>
+      <artifactId>zipkin-sender-urlconnection</artifactId>
+      <version>${version.zipkin.reporter}</version>
+    </dependency>
   </dependencies>
 
   <build>

@@ -21,13 +21,27 @@ import javax.enterprise.event.Observes;
 import org.apache.camel.cdi.ContextName;
 import org.apache.camel.management.event.CamelContextStartingEvent;
 import org.apache.camel.opentracing.OpenTracingTracer;
+import brave.opentracing.BraveTracer;
+import io.opentracing.Tracer;
+import zipkin.Span;
+import zipkin.reporter.AsyncReporter;
+import zipkin.reporter.Reporter;
+import zipkin.reporter.urlconnection.URLConnectionSender;
 
 @ContextName("Server1")
 public class ClientApplication {
 
     public void setupCamel(@Observes CamelContextStartingEvent event) {
         OpenTracingTracer ottracer = new OpenTracingTracer();
+        ottracer.setTracer(initTracer());
         ottracer.init(event.getContext());
     }
 
+    public static Tracer initTracer() {
+        System.out.println("Using Zipkin Tracer");
+        String zipkinServerUrl = String.format("%s/api/v1/spans", System.getenv("ZIPKIN_SERVER_URL"));
+        Reporter<Span> reporter = AsyncReporter.builder(URLConnectionSender.create(zipkinServerUrl)).build();
+        brave.Tracer tracer = brave.Tracer.newBuilder().localServiceName("client").reporter(reporter).build();
+        return BraveTracer.wrap(tracer);
+    }
 }

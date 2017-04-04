@@ -19,6 +19,14 @@ package sample.camel;
 import org.apache.camel.opentracing.starter.CamelOpenTracing;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+
+import brave.opentracing.BraveTracer;
+import io.opentracing.Tracer;
+import zipkin.Span;
+import zipkin.reporter.AsyncReporter;
+import zipkin.reporter.Reporter;
+import zipkin.reporter.urlconnection.URLConnectionSender;
 
 //CHECKSTYLE:OFF
 /**
@@ -37,5 +45,13 @@ public class Service1Application {
         SpringApplication.run(Service1Application.class, args);
     }
 
+    @Bean
+    public Tracer initTracer() {
+        System.out.println("Using Zipkin Tracer");
+        String zipkinServerUrl = String.format("%s/api/v1/spans", System.getenv("ZIPKIN_SERVER_URL"));
+        Reporter<Span> reporter = AsyncReporter.builder(URLConnectionSender.create(zipkinServerUrl)).build();
+        brave.Tracer tracer = brave.Tracer.newBuilder().localServiceName("service1").reporter(reporter).build();
+        return BraveTracer.wrap(tracer);
+    }
 }
 //CHECKSTYLE:ON
