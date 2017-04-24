@@ -237,9 +237,13 @@ public class OpenTracingTracer extends ServiceSupport implements RoutePolicyFact
                     if (LOG.isTraceEnabled()) {
                         LOG.trace("OpenTracing: start client span=" + managedSpan.getSpan());
                     }
-                    sd.post(managedSpan.getSpan(), ese.getExchange(), ese.getEndpoint());
-                    managedSpan.getSpan().finish();
-                    managedSpan.deactivate();
+                    if (managedSpan.getSpan() != null) {
+                        sd.post(managedSpan.getSpan(), ese.getExchange(), ese.getEndpoint());
+                        managedSpan.getSpan().finish();
+                        managedSpan.deactivate();
+                    } else {
+                        LOG.warn("OpenTracing: could not find managed span for exchange=" + ese.getExchange());
+                    }
                 }
             } catch (Throwable t) {
                 // This exception is ignored
