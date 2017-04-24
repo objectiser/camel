@@ -17,6 +17,19 @@
 package org.apache.camel.loanbroker;
 
 import org.apache.camel.spring.Main;
+import org.apache.camel.CamelContext;
+
+import org.apache.camel.opentracing.OpenTracingTracer;
+
+import com.uber.jaeger.Tracer;
+import com.uber.jaeger.metrics.Metrics;
+import com.uber.jaeger.metrics.NullStatsReporter;
+import com.uber.jaeger.reporters.RemoteReporter;
+import com.uber.jaeger.reporters.Reporter;
+import com.uber.jaeger.samplers.ConstSampler;
+import com.uber.jaeger.samplers.Sampler;
+import com.uber.jaeger.senders.Sender;
+import com.uber.jaeger.senders.UDPSender;
 
 /**
  * Main class to start the loan broker server
@@ -29,7 +42,16 @@ public final class LoanBroker {
     // START SNIPPET: starting
     public static void main(String... args) throws Exception {
 
-        Main main = new Main();
+        Main main = new Main() {
+		protected void postProcessCamelContext(CamelContext camelContext)
+                                throws Exception {
+			System.out.println("CAMEL CONTEXT = "+camelContext);
+			System.out.println("GPB: REGISTER TRACER....");
+			OpenTracingTracer ottracer = new OpenTracingTracer();
+			ottracer.setTracer(initTracer());
+			ottracer.init(camelContext);
+		}
+	};
         // configure the location of the Spring XML file
 
         main.setApplicationContextUri("META-INF/spring/server.xml");
@@ -38,5 +60,13 @@ public final class LoanBroker {
         main.run();
     }
     // END SNIPPET: starting
+
+    public static io.opentracing.Tracer initTracer() {
+        Sampler sampler = new ConstSampler(true);
+        Sender sender = new UDPSender(null, 0, 0);
+        Reporter reporter = new RemoteReporter(sender, 500, 1000, Metrics.fromStatsReporter(new NullStatsReporter()));
+        Tracer tracer = new Tracer.Builder("client", reporter, sampler).build();
+        return tracer;
+    }
 
 }
