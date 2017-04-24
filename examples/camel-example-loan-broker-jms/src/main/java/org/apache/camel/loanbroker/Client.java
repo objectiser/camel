@@ -21,6 +21,18 @@ import org.apache.camel.ProducerTemplate;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import org.apache.camel.opentracing.OpenTracingTracer;
+
+import com.uber.jaeger.Tracer;
+import com.uber.jaeger.metrics.Metrics;
+import com.uber.jaeger.metrics.NullStatsReporter;
+import com.uber.jaeger.reporters.RemoteReporter;
+import com.uber.jaeger.reporters.Reporter;
+import com.uber.jaeger.samplers.ConstSampler;
+import com.uber.jaeger.samplers.Sampler;
+import com.uber.jaeger.senders.Sender;
+import com.uber.jaeger.senders.UDPSender;
+
 //START SNIPPET: client
 public final class Client {
 
@@ -31,7 +43,13 @@ public final class Client {
 
         AbstractApplicationContext applicationContext = new ClassPathXmlApplicationContext("META-INF/spring/client.xml");
         CamelContext context = applicationContext.getBean("camel", CamelContext.class);
+
         context.start();
+
+	OpenTracingTracer ottracer = new OpenTracingTracer();
+        ottracer.setTracer(initTracer());
+	ottracer.init(context);
+System.out.println("GPB: CLIENT INIT TRACER IN CONTEXT = "+context);
 
         ProducerTemplate template = context.createProducerTemplate();
 
@@ -42,5 +60,14 @@ public final class Client {
         context.stop();
     }
 
+    public static io.opentracing.Tracer initTracer() {
+        Sampler sampler = new ConstSampler(true);
+        Sender sender = new UDPSender(null, 0, 0);
+        Reporter reporter = new RemoteReporter(sender, 500, 1000, Metrics.fromStatsReporter(new NullStatsReporter()));
+        Tracer tracer = new Tracer.Builder("client", reporter, sampler).build();
+        return tracer;
+    }
+
 }
 // END SNIPPET: client
+
