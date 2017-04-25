@@ -18,6 +18,16 @@ package sample.camel;
 
 import org.apache.camel.main.Main;
 
+import com.uber.jaeger.Tracer;
+import com.uber.jaeger.metrics.Metrics;
+import com.uber.jaeger.metrics.NullStatsReporter;
+import com.uber.jaeger.reporters.RemoteReporter;
+import com.uber.jaeger.reporters.Reporter;
+import com.uber.jaeger.samplers.ConstSampler;
+import com.uber.jaeger.samplers.Sampler;
+import com.uber.jaeger.senders.Sender;
+import com.uber.jaeger.senders.UDPSender;
+
 //CHECKSTYLE:OFF
 /**
  * A Java main that runs Camel service 2
@@ -26,9 +36,17 @@ public class Service2Application {
 
     public static void main(String[] args) throws Exception {
         Main main = new Main();
+        main.bind("tracer", initTracer());
         main.addRouteBuilder(new Service2Route());
         main.run();
     }
 
+    public static io.opentracing.Tracer initTracer() {
+        Sampler sampler = new ConstSampler(true);
+        Sender sender = new UDPSender(null, 0, 0);
+        Reporter reporter = new RemoteReporter(sender, 500, 1000, Metrics.fromStatsReporter(new NullStatsReporter()));
+        Tracer tracer = new Tracer.Builder("service2", reporter, sampler).build();
+        return tracer;
+    }
 }
 //CHECKSTYLE:ON

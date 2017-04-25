@@ -21,11 +21,23 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
+import org.apache.camel.opentracing.starter.CamelOpenTracing;
+
+import com.uber.jaeger.Tracer;
+import com.uber.jaeger.metrics.Metrics;
+import com.uber.jaeger.metrics.NullStatsReporter;
+import com.uber.jaeger.reporters.RemoteReporter;
+import com.uber.jaeger.reporters.Reporter;
+import com.uber.jaeger.samplers.ConstSampler;
+import com.uber.jaeger.samplers.Sampler;
+import com.uber.jaeger.senders.Sender;
+import com.uber.jaeger.senders.UDPSender;
 
 /**
  * A Spring Boot application that runs the Camel Hystrix client application that calls service 1 and service 2 (as fallback)
  */
 @SpringBootApplication
+@CamelOpenTracing
 public class ClientApplication {
 
     /**
@@ -45,4 +57,12 @@ public class ClientApplication {
         return new ServletRegistrationBean(new HystrixEventStreamServlet(), "/hystrix.stream");
     }
 
+    @Bean
+    public static io.opentracing.Tracer initTracer() {
+        Sampler sampler = new ConstSampler(true);
+        Sender sender = new UDPSender(null, 0, 0);
+        Reporter reporter = new RemoteReporter(sender, 500, 1000, Metrics.fromStatsReporter(new NullStatsReporter()));
+        Tracer tracer = new Tracer.Builder("client", reporter, sampler).build();
+        return tracer;
+    }
 }
