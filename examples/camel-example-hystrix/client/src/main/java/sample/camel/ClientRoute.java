@@ -29,9 +29,6 @@ public class ClientRoute extends RouteBuilder {
             .bean("counterBean")
             .log(" Client request: ${body}")
             .hystrix()
-		.hystrixConfiguration()
-		     .executionIsolationStrategy("SEMAPHORE")
-		.end()
                 .to("http://localhost:9090/service1")
             //.onFallback()
             // we use a fallback without network that provides a repsonse message immediately
