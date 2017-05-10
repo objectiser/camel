@@ -72,8 +72,8 @@
     <!-- tracer -->
     <dependency>
       <groupId>com.uber.jaeger</groupId>
-      <artifactId>jaeger-core</artifactId>
-      <version>0.18.0</version>
+      <artifactId>jaeger-tracerresolver</artifactId>
+      <version>0.19.0-SNAPSHOT</version>
     </dependency>
 
   </dependencies>
