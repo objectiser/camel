@@ -90,9 +90,9 @@
       <artifactId>camel-opentracing</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.camel</groupId>
-      <artifactId>camel-example-opentracing-loggingtracer</artifactId>
-      <version>${project.version}</version>
+      <groupId>com.uber.jaeger</groupId>
+      <artifactId>jaeger-tracerresolver</artifactId>
+      <version>0.19.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>io.opentracing.contrib</groupId>
