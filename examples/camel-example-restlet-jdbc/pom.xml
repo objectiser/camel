@@ -107,6 +107,17 @@
       <artifactId>log4j-web</artifactId>
       <scope>runtime</scope>
     </dependency>
+
+    <!-- tracer -->
+    <dependency>
+      <groupId>org.apache.camel</groupId>
+      <artifactId>camel-opentracing</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.uber.jaeger</groupId>
+      <artifactId>jaeger-core</artifactId>
+      <version>0.19.0-SNAPSHOT</version>
+    </dependency>
   </dependencies>
 
   <build>

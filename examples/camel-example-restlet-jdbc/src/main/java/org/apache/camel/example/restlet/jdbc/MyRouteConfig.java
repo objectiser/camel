@@ -19,10 +19,38 @@ package org.apache.camel.example.restlet.jdbc;
 
 import org.apache.camel.builder.RouteBuilder;
 
+import org.apache.camel.opentracing.OpenTracingTracer;
+
+import com.uber.jaeger.Tracer;
+import com.uber.jaeger.metrics.Metrics;
+import com.uber.jaeger.metrics.NullStatsReporter;
+import com.uber.jaeger.reporters.RemoteReporter;
+import com.uber.jaeger.reporters.Reporter;
+import com.uber.jaeger.samplers.ConstSampler;
+import com.uber.jaeger.samplers.Sampler;
+import com.uber.jaeger.senders.Sender;
+import com.uber.jaeger.senders.UdpSender;
+
 public class MyRouteConfig extends RouteBuilder {
+
+    public static io.opentracing.Tracer initTracer() {
+        Sampler sampler = new ConstSampler(true);
+        Sender sender = new UdpSender(null, 0, 0);
+        Reporter reporter = new RemoteReporter(sender, 500, 1000, Metrics.fromStatsReporter(new NullStatsReporter()));
+        Tracer tracer = new Tracer.Builder("client", reporter, sampler).build();
+        return tracer;
+/*
+	System.setProperty("JAEGER_SERVICE_NAME", "client2");
+	return TracerResolver.resolveTracer();
+*/
+    }
 
     @Override
     public void configure() {
+
+        OpenTracingTracer ottracer = new OpenTracingTracer();
+        ottracer.setTracer(initTracer());
+        ottracer.init(getContext());
 
         rest("/persons")
             .post().to("direct:postPersons")
