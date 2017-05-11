@@ -22,7 +22,6 @@ import org.apache.camel.cdi.ContextName;
 import org.apache.camel.management.event.CamelContextStartingEvent;
 import org.apache.camel.opentracing.OpenTracingTracer;
 
-/*
 import com.uber.jaeger.Tracer;
 import com.uber.jaeger.metrics.Metrics;
 import com.uber.jaeger.metrics.NullStatsReporter;
@@ -31,7 +30,8 @@ import com.uber.jaeger.reporters.Reporter;
 import com.uber.jaeger.samplers.ConstSampler;
 import com.uber.jaeger.samplers.Sampler;
 import com.uber.jaeger.senders.Sender;
-import com.uber.jaeger.senders.UDPSender;
+import com.uber.jaeger.senders.UdpSender;
+/*
 */
 
 import io.opentracing.contrib.tracerresolver.TracerResolver;
@@ -46,14 +46,14 @@ public class ClientApplication {
     }
 
     public static io.opentracing.Tracer initTracer() {
-/*
         Sampler sampler = new ConstSampler(true);
-        Sender sender = new UDPSender(null, 0, 0);
+        Sender sender = new UdpSender(null, 0, 0);
         Reporter reporter = new RemoteReporter(sender, 500, 1000, Metrics.fromStatsReporter(new NullStatsReporter()));
         Tracer tracer = new Tracer.Builder("client", reporter, sampler).build();
         return tracer;
-*/
+/*
 	System.setProperty("JAEGER_SERVICE_NAME", "client2");
 	return TracerResolver.resolveTracer();
+*/
     }
 }
