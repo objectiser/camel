@@ -20,10 +20,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import io.opentracing.Span;
+
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
-
-import io.opentracing.Span;
 
 public class RestSpanDecorator extends AbstractHttpSpanDecorator {
 
@@ -71,7 +71,7 @@ public class RestSpanDecorator extends AbstractHttpSpanDecorator {
                 if (parameters == null) {
                     parameters = new ArrayList<>();
                 }
-                parameters.add(uri.substring(startIndex+1, endIndex));
+                parameters.add(uri.substring(startIndex + 1, endIndex));
                 startIndex = uri.indexOf('(', endIndex);
             } else {
                 // Break out of loop as no valid end token

@@ -170,7 +170,6 @@ public class OpenTracingTracer extends ServiceSupport implements RoutePolicyFact
 
     protected SpanDecorator getSpanDecorator(Endpoint endpoint) {
         SpanDecorator sd = decorators.get(URI.create(endpoint.getEndpointUri()).getScheme());
-System.out.println("GPB: SPAN DECORATOR endpoint="+endpoint+" scheme="+URI.create(endpoint.getEndpointUri()).getScheme()+" decorator="+sd);
         if (sd == null) {
             return SpanDecorator.DEFAULT;
         }
