@@ -16,8 +16,14 @@
  */
 package org.apache.camel.opentracing.decorators;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
+
+import io.opentracing.Span;
 
 public class RestSpanDecorator extends AbstractHttpSpanDecorator {
 
@@ -36,4 +42,43 @@ public class RestSpanDecorator extends AbstractHttpSpanDecorator {
         return path;
     }
 
+    @Override
+    public void pre(Span span, Exchange exchange, Endpoint endpoint) {
+        super.pre(span, exchange, endpoint);
+
+        getParameters(exchange.getFromEndpoint().getEndpointUri()).forEach(param -> {
+            Object value = exchange.getIn().getHeader(param);
+            if (value != null) {
+                if (value instanceof String) {
+                    span.setTag(param, (String)value);
+                } else if (value instanceof Number) {
+                    span.setTag(param, (Number)value);
+                } else if (value instanceof Boolean) {
+                    span.setTag(param, (Boolean)value);
+                }
+            }
+        });
+        
+    }
+
+    public static List<String> getParameters(String uri) {
+        List<String> parameters = null;
+
+        int startIndex = uri.indexOf('(');
+        while (startIndex != -1) {
+            int endIndex = uri.indexOf(')', startIndex);
+            if (endIndex != -1) {
+                if (parameters == null) {
+                    parameters = new ArrayList<>();
+                }
+                parameters.add(uri.substring(startIndex+1, endIndex));
+                startIndex = uri.indexOf('(', endIndex);
+            } else {
+                // Break out of loop as no valid end token
+                startIndex = -1;
+            }
+        }
+
+        return parameters == null ? Collections.emptyList() : parameters;
+    }
 }

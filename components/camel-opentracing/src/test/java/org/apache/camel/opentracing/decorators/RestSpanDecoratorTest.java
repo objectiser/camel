@@ -18,11 +18,19 @@ package org.apache.camel.opentracing.decorators;
 
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
+import org.apache.camel.Message;
 import org.apache.camel.opentracing.SpanDecorator;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import io.opentracing.mock.MockSpan;
+import io.opentracing.mock.MockTracer;
+import io.opentracing.tag.Tags;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Arrays;
 
 public class RestSpanDecoratorTest {
 
@@ -41,6 +49,37 @@ public class RestSpanDecoratorTest {
         SpanDecorator decorator = new RestSpanDecorator();
 
         assertEquals(path, decorator.getOperationName(exchange, endpoint));
+    }
+
+    @Test
+    public void testGetParameters() {
+        assertEquals(Arrays.asList("id1", "id2"), RestSpanDecorator.getParameters("/context/(id1)/(id2)"));
+    }
+
+    @Test
+    public void testGetParametersNone() {
+        assertTrue(RestSpanDecorator.getParameters("/context/hello/world").isEmpty());
+    }
+
+    @Test
+    public void testPre() {
+        Endpoint endpoint = Mockito.mock(Endpoint.class);
+        Exchange exchange = Mockito.mock(Exchange.class);
+        Message message = Mockito.mock(Message.class);
+
+        Mockito.when(endpoint.getEndpointUri()).thenReturn("/persons/(personId)");
+        Mockito.when(exchange.getFromEndpoint()).thenReturn(endpoint);
+        Mockito.when(exchange.getIn()).thenReturn(message);
+        Mockito.when(message.getHeader("personId")).thenReturn("fred");
+
+        SpanDecorator decorator = new RestSpanDecorator();
+
+        MockTracer tracer = new MockTracer();
+        MockSpan span = (MockSpan)tracer.buildSpan("TestSpan").start();
+
+        decorator.pre(span, exchange, endpoint);
+
+        assertEquals("fred", span.tags().get("personId"));
     }
 
 }
